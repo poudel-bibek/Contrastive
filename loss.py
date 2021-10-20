@@ -1,3 +1,5 @@
+## Code obtained from https://gist.github.com/gautierdag/cfbebbbc4897dac2f81882e5b64b5b09
+
 import numpy as np
 import torch
 import torch.nn as nn 
@@ -69,3 +71,6 @@ class SimCLR_Loss(nn.Module):
 # Questions:
 # 1. Why the Cross Entropy?
 # Instead of the exponential operation cross entropy is used, it combines softmax and negative log likelihood
+
+def return_loss(batch_size, temperature):
+    return SimCLR_Loss(batch_size, temperature)

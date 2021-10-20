@@ -1,5 +1,9 @@
+## Code obtained from https://gist.github.com/sadimanna/74f9b2e7dbcfae1b9aa1e2a4186c353b
+
 import torch 
-import torch.nn as nn 
+import torch.nn as nn
+from torch.nn.modules.linear import Linear 
+import torchvision.models as models
 
 class Identity(nn.Module):
     """
@@ -14,6 +18,7 @@ class Identity(nn.Module):
 class LinearLayer(nn.module):
     """
     A single Linear Layer and whether or not to use BN 1D
+    This is used by the projection head below
     """
     def __init__(self, in_features, out_features, use_bias = True, use_bn = False, **kwargs):
         super(LinearLayer, self).__init__(**kwargs)
@@ -33,4 +38,61 @@ class LinearLayer(nn.module):
         return x 
 
 class ProjectionHead(nn.Module):
-    def __init__(self)
+    """
+    Projection could be a linear or non linear mapping
+    hidden features ? No. of features in the intermediate layers
+    """
+    def __init__(self, in_features, hidden_features, out_features, head_type= 'nonlinear', **kwargs):
+        super(ProjectionHead, self).__init__(**kwargs)
+        self.in_features = in_features
+        self.out_features = out_features
+        self.hidden_features = hidden_features 
+        self.head_type = head_type 
+
+        if self.head_type == 'linear':
+            self.layers = LinearLayer(self.in_features, self.out_features, False, True)
+
+        elif self.head_type == 'nonlinear':
+            self.layers - nn.Sequential(
+                LinearLayer(self.in_features, self.hidden_features, True, True),
+                nn.ReLU(), 
+                LinearLayer(self.hidden_features, self.out_features, False, True))
+
+        def forward(self, x):
+            x = self.layers(x)
+            return x
+
+class PreModel(nn.Module):
+    """
+    The model to be used for Pretraining = ResNet50
+    Plus a projection head on top 
+
+    """
+    def __init__(self, base_model):
+        super().__init__()
+        self.base_model = base_model 
+
+        self.pretrained = models.resnet50(pretrained= True) ## Why a pretrained resnet50?
+
+        # The input size of this pre-trained may be different (mostly its tuned for imagenet), 
+        # modify it to suit our needs
+
+        self.pretrained.conv1 = 
+        self.pretrained.maxpool = 
+        self.pretrained.fc = 
+
+
+        self.projector = ProjectionHead(2048, 2048, 2048)
+
+
+    def forward(self, x):
+        out = self.pretrained(x)
+        xp = self.projector(torch.squeeze(out))
+        return xp
+
+
+def return_model()
+    return PreModel()
+
+
+## Use case:
