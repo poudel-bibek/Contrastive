@@ -15,7 +15,7 @@ class Identity(nn.Module):
     def forward(self, x):
         return x
 
-class LinearLayer(nn.module):
+class LinearLayer(nn.Module):
     """
     A single Linear Layer and whether or not to use BN 1D
     This is used by the projection head below

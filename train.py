@@ -9,6 +9,7 @@ from model import PreModel
 from optimizer import LARS
 from loss import SimCLR_Loss
 from data_utils import DataGenerator
+from data_utils import load_data
 
 class Trainer:
     def __init__(self, args):
@@ -29,7 +30,9 @@ class Trainer:
         print("Device Assigned to: ", self.device)
 
         ## Data Loading operations
-        data = DataGenerator()
+        train_images, train_labels , val_images, val_labels = load_data()
+    
+        #data = DataGenerator()
 
 
         self.net = PreModel().to(self.device)
@@ -134,8 +137,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_data_dir", default = "./Data", help = "Data Directory")
     parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
-    parser.add_argument("train_batch_size",type = int, default = 128, help = "Train batch size")
-    parser.add_argument("val_batch_size",type = int, default = 128, help = "Train batch size")
+    parser.add_argument("--train_batch_size",type = int, default = 128, help = "Train batch size")
+    parser.add_argument("--val_batch_size",type = int, default = 128, help = "Train batch size")
     parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 0.01, help = "Learning Rate")
     parser.add_argument("--dataset_src", default="/home/b/Desktop/Contrastive/Data/Imagenet/64/", help="The source for creating dataset")
