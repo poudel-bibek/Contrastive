@@ -10,3 +10,5 @@ env/*
 runs/*
 ./runs/
 ./runs/*
+
+__pycache__
