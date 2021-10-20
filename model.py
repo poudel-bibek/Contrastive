@@ -72,27 +72,31 @@ class PreModel(nn.Module):
         super().__init__()
         self.base_model = base_model 
 
-        self.pretrained = models.resnet50(pretrained= True) ## Why a pretrained resnet50?
+        self.pretrained = models.resnet50(pretrained= False) ## Default was True, changed to False . Why a pretrained resnet50?
 
         # The input size of this pre-trained may be different (mostly its tuned for imagenet), 
         # modify it to suit our needs
 
-        self.pretrained.conv1 = 
-        self.pretrained.maxpool = 
-        self.pretrained.fc = 
+        self.pretrained.conv1 = nn.conv2d(3,64,kernel_size=(3,3), stride = (1,1), bias= False)
+        self.pretrained.maxpool = Identity() ## Essentially dont do maxpool
+        self.pretrained.fc = Identity() # This also does nothing
 
+        for p in self.pretrained.parameters():
+            p.requires_grad = True
 
         self.projector = ProjectionHead(2048, 2048, 2048)
 
 
     def forward(self, x):
-        out = self.pretrained(x)
-        xp = self.projector(torch.squeeze(out))
+        out = self.pretrained(x) # Encoder
+        xp = self.projector(torch.squeeze(out)) # Projection head
         return xp
 
 
-def return_model()
-    return PreModel()
+# def return_model():
+#     return PreModel()
 
-
+## Questions
+# Why the pretrained ResNet 50 to start with?
+# Does not have to be pre-trained, https://github.com/sthalles/SimCLR/blob/master/models/resnet_simclr.py
 ## Use case:

@@ -72,5 +72,5 @@ class SimCLR_Loss(nn.Module):
 # 1. Why the Cross Entropy?
 # Instead of the exponential operation cross entropy is used, it combines softmax and negative log likelihood
 
-def return_loss(batch_size, temperature):
-    return SimCLR_Loss(batch_size, temperature)
+# def return_loss(batch_size, temperature):
+#     return SimCLR_Loss(batch_size, temperature)

@@ -138,12 +138,9 @@ class LARS(Optimizer):
 
 
 
-def return_optim():
-    return LARS(params, 
-    lr = required, momentum= 0.9, 
-    use_nesterov= False, 
-    weight_decay= 0.0, 
-    exclude_from_weight_decay = None, 
-    exclude_from_layer_adaptation = None, 
-    classic_momentum=True,
-    eeta = EETA_DEFAULT)
+# def return_optim(model):
+#     return LARS([params for params in model.parameters() if params.requires_grad], # Of course
+#     lr=0.2,
+#     weight_decay=1e-6,
+#     exclude_from_weight_decay=["batch_normalization", "bias"],
+#     )
