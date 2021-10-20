@@ -138,5 +138,5 @@ if __name__ == "__main__":
     parser.add_argument("val_batch_size",type = int, default = 128, help = "Train batch size")
     parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 0.01, help = "Learning Rate")
-    parser.add_argument("--val_dataset_src", default="./Data/val.npz", help="The source for creating dataset for validating predictor")
+    parser.add_argument("--dataset_src", default="/home/b/Desktop/Contrastive/Data/Imagenet/64/", help="The source for creating dataset")
     main(parser.parse_args())
