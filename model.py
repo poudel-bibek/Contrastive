@@ -58,9 +58,9 @@ class ProjectionHead(nn.Module):
                 nn.ReLU(), 
                 LinearLayer(self.hidden_features, self.out_features, False, True))
 
-        def forward(self, x):
-            x = self.layers(x)
-            return x
+    def forward(self, x):
+        x = self.layers(x)
+        return x
 
 class PreModel(nn.Module):
     """
@@ -84,7 +84,7 @@ class PreModel(nn.Module):
         for p in self.pretrained.parameters():
             p.requires_grad = True
 
-        self.projector = ProjectionHead(2048, 2048, 2048)
+        self.projector = ProjectionHead(2048, 2048, 128)
 
 
     def forward(self, x):
