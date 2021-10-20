@@ -11,27 +11,36 @@ from torchvision import datasets, transforms, models
 
 
 class DataGenerator(Dataset):
-    def __init__(self, phase, imgarr, dataset, s=0.5):
+    def __init__(self, phase, imgarr, s=0.5):
         self.phase = phase
         self.imgarr = imgarr # I believe that this is a batch of images as further evidenced by the length function
         self.s = s
         self.transforms = transforms.Compose([transforms.RandomHorizontalFlip(0.5),
                                                 transforms.RandomResizedCrop((66, 200), (0.8,1.0)),
-                                                transforms.Compose([transforms.RandomApply([transforms.ColorJitter(0.8*self.s, 0.8*self.s, 0.8*self.s, 0.2*self.s)], p=0.8),
-                                                                    transforms.RandomGrayscale(p=0.2)
-                                                                    ]),
+                                                transforms.Compose([transforms.RandomApply([transforms.ColorJitter(0.8*self.s, 
+                                                                                                                    0.8*self.s, 
+                                                                                                                    0.8*self.s, 
+                                                                                                                    0.2*self.s)], p=0.8),
+                                                                    transforms.RandomGrayscale(p=0.2)]),
                                                 transforms.GaussianBlur(7)
                                             ])
     
-        self.mean = np.mean(dataset / 255.0, axis=(0, 2, 3), keepdims=True)
-        self.std = np.mean(dataset / 255.0, axix=(0,2,3), keepdims=True)
+        # These axes were given for CIFAR10, but why for ImageNet?
+        # self.mean = np.mean(imgarr / 255.0, axis=(0, 2, 3), keepdims=True)
+        # self.std = np.mean(imgarr / 255.0, axis=(0, 2, 3), keepdims=True)
+        # print("mean =", self.mean)
+        # print("std = ", self.std)
+        # Takes too much memory 
+        
+        self.mean = np.array([[[[0.485]], [[0.456]], [[0.406]]]])
+        self.std = np.array([[[[0.229]], [[0.224]], [[0.225]]]])
 
     def __len__(self):
         return self.imgarr.shape[0]
     
     def __getitem__(self, idx):
         x = self.imgarr[idx]
-        x = x.astype(np.float32) / 255.0
+        x = x.astype(np.float32) / 255.0 # if its done here, why done in init as well?
 
         x1 = self.augment(torch.from_numpy(x))
         x2 = self.augment(torch.from_numpy(x))

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from model import PreModel
 from optimizer import LARS
 from loss import SimCLR_Loss
+
+from torch.utils.data import Dataset, DataLoader
 from data_utils import DataGenerator
 from data_utils import load_data
 
@@ -37,9 +39,15 @@ class Trainer:
                                                                                                     train_targets.shape[0],
                                                                                                     val_images.shape[0],
                                                                                                     val_targets.shape[0]))
-        # Get Dataloaders here
+        # Get Dataloaders here, but why not labels used?
+        # This is unsupervised, labels dont matter 
 
+        datagen_train = DataGenerator('train', train_images)
+        self.train_dataloader = DataLoader(datagen_train, self.args.train_batch_size, drop_last = True)
 
+        # So what are we trying to validate ? if we dont have labels
+        datagen_val = DataGenerator('train', val_images)
+        self.val_dataloader = DataLoader(datagen_val, self.args.val_batch_size, drop_last = True)
 
         self.net = PreModel('resnet50').to(self.device)
         self.criterion = SimCLR_Loss(self.args.train_batch_size, self.args.temperature)
@@ -66,7 +74,7 @@ class Trainer:
             self.net.train()
 
             if i==0:
-                myfile = open('model_init_weights.txt', 'w')
+                myfile = open('./logs/model_init_weights.txt', 'w')
                 myfile.write("SEED = %s\n" % self.args.seed)
                 print("Writing Model Initial Weights to a file\n")
                 for param in self.net.parameters():
@@ -130,7 +138,7 @@ class Trainer:
 
         ax.set_xticks(xticks) #;
         ax.legend(["Training"]) # ["Validation", "Training"]
-        fig.savefig('./training_result.png')
+        fig.savefig('./logs/training_result.png')
 
         print("#### Ended Training ####")
         logfile.write("#### Ended Training ####")
@@ -147,9 +155,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--train_data_dir", default = "./Data", help = "Data Directory")
     parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
-    parser.add_argument("--train_batch_size",type = int, default = 128, help = "Train batch size")
+    parser.add_argument("--train_batch_size",type = int, default = 16, help = "Train batch size")
     parser.add_argument("--temperature",type = int, default = 0.5, help = "For the Loss function")
-    parser.add_argument("--val_batch_size",type = int, default = 128, help = "Train batch size")
+    parser.add_argument("--val_batch_size",type = int, default = 16, help = "Train batch size")
     parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 0.01, help = "Learning Rate")
     parser.add_argument("--weight_decay", type=float, default = 1e-6, help = "Weight Decay")
