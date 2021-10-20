@@ -1,5 +1,3 @@
-# Source
-# https://patrykchrabaszcz.github.io/Imagenet32/
 
 import os
 import lasagne
@@ -59,15 +57,18 @@ class DataGenerator(Dataset):
         self.imgarr = self.imgarr[random.sample(population=list(range(self.__len__())), k=self.__len__())]
 
 
+# Source
+# https://patrykchrabaszcz.github.io/Imagenet32/
+
 def unpickle(file):
     with open(file, 'rb') as fo:
         dict = pickle.load(fo, encoding='bytes')
     return dict
     
-def load_data():
+def load_data(data_dir):
     train_files = ['train_data_batch_1'] #'train_data_batch_2'] # For now just use 2 
     val_file = 'val_data'
-    data_dir = './Data/Imagenet/64/'
+    data_dir = data_dir
     
     im_shape = 12288 # 64x64x3
     train_images = np.array([],dtype=np.uint8).reshape((0,im_shape))

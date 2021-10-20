@@ -8,7 +8,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class SimCLR_Loss(nn.Module):
     def __init__(self, batch_size, temperature):
-        super(SimCLR_Loss, self) ## Why Imrealun?
+        super(SimCLR_Loss, self).__init__() ## Why Imrealun?
         self.batch_size = batch_size 
         self.temperature = temperature 
 

@@ -30,14 +30,24 @@ class Trainer:
         print("Device Assigned to: ", self.device)
 
         ## Data Loading operations
-        train_images, train_labels , val_images, val_labels = load_data()
-    
-        #data = DataGenerator()
+        train_images, train_targets, val_images, val_targets  = load_data(self.args.dataset_src)
+
+        print("Data Directory: ", self.args.dataset_src)
+        print("\nLoaded:\nTraining: {} Images, {} Targets\nValidation: {} Images, {} Targets".format(train_images.shape[0],
+                                                                                                    train_targets.shape[0],
+                                                                                                    val_images.shape[0],
+                                                                                                    val_targets.shape[0]))
+        # Get Dataloaders here
 
 
-        self.net = PreModel().to(self.device)
-        self.criterion = SimCLR_Loss()
-        self.optimizer = LARS()
+
+        self.net = PreModel('resnet50').to(self.device)
+        self.criterion = SimCLR_Loss(self.args.train_batch_size, self.args.temperature)
+        self.optimizer = LARS([params for params in self.net.parameters() if params.requires_grad],
+            lr=self.args.lr,
+            weight_decay=self.args.weight_decay,
+            exclude_from_weight_decay=["batch_normalization", "bias"],
+        )
 
         print("\n--------------------------------")
         print("Total No. of Trainable Parameters: ",sum(p.numel() for p in self.net.parameters() if p.requires_grad))
@@ -138,8 +148,11 @@ if __name__ == "__main__":
     parser.add_argument("--train_data_dir", default = "./Data", help = "Data Directory")
     parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
     parser.add_argument("--train_batch_size",type = int, default = 128, help = "Train batch size")
+    parser.add_argument("--temperature",type = int, default = 0.5, help = "For the Loss function")
     parser.add_argument("--val_batch_size",type = int, default = 128, help = "Train batch size")
     parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 0.01, help = "Learning Rate")
-    parser.add_argument("--dataset_src", default="/home/b/Desktop/Contrastive/Data/Imagenet/64/", help="The source for creating dataset")
+    parser.add_argument("--weight_decay", type=float, default = 1e-6, help = "Weight Decay")
+
+    parser.add_argument("--dataset_src", default='./Data/Imagenet/64/', help="The source for creating dataset")
     main(parser.parse_args())

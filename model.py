@@ -53,7 +53,7 @@ class ProjectionHead(nn.Module):
             self.layers = LinearLayer(self.in_features, self.out_features, False, True)
 
         elif self.head_type == 'nonlinear':
-            self.layers - nn.Sequential(
+            self.layers = nn.Sequential(
                 LinearLayer(self.in_features, self.hidden_features, True, True),
                 nn.ReLU(), 
                 LinearLayer(self.hidden_features, self.out_features, False, True))
@@ -77,7 +77,7 @@ class PreModel(nn.Module):
         # The input size of this pre-trained may be different (mostly its tuned for imagenet), 
         # modify it to suit our needs
 
-        self.pretrained.conv1 = nn.conv2d(3,64,kernel_size=(3,3), stride = (1,1), bias= False)
+        self.pretrained.conv1 = nn.Conv2d(3,64,kernel_size=(3,3), stride = (1,1), bias= False)
         self.pretrained.maxpool = Identity() ## Essentially dont do maxpool
         self.pretrained.fc = Identity() # This also does nothing
 
