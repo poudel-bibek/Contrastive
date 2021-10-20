@@ -96,3 +96,7 @@ def load_databatch(data_folder, idx, img_size=64):
         X_train=lasagne.utils.floatX(X_train),
         Y_train=Y_train.astype('int32'),
         mean=mean_image)
+
+data_folder = "/home/b/Desktop/Contrastive/Data/Imagenet/64/"
+idx = 1
+data = load_databatch(data_folder, idx)
