@@ -1,6 +1,6 @@
 
 import os
-import lasagne
+#import lasagne
 import random
 import pickle
 import numpy as np
@@ -9,6 +9,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms, models
 
+# Source
+# Code obtained from https://gist.github.com/sadimanna/c247acde2edbdd744182b0789acd31d6#file-simclr_datagen-py
 
 class DataGenerator(Dataset):
     def __init__(self, phase, imgarr, s=0.5):
@@ -66,6 +68,49 @@ class DataGenerator(Dataset):
     def on_epoch_end(self):
         self.imgarr = self.imgarr[random.sample(population=list(range(self.__len__())), k=self.__len__())]
 
+# Source
+# Code obtained from https://gist.github.com/sadimanna/07729a36aca588ccf53a15f4723dee8a#file-simclr_ds_datagen-py
+
+class DownstreamDataGenerator(Dataset):
+    def __init__(self, phase, imgarr, labels, num_classes):
+        self.phase = phase
+        self.num_classes = num_classes
+        self.imgarr = imgarr
+        self.labels = labels
+
+        self.transforms = transforms.RandomResizedCrop((66, 200), (0.8, 1.0))
+
+        self.mean = np.array([[[[0.485]], [[0.456]], [[0.406]]]])
+        self.std = np.array([[[[0.229]], [[0.224]], [[0.225]]]])
+    
+    def __len__(self):
+        return self.imgarr.shape[0]
+    
+    def __getitem__(self, idx):
+        x = self.imgarr[idx]
+
+        img = torch.from_numpy(x).float()
+        label = self.labels[idx]
+
+        if self.phase == 'train':
+            img = self.transforms(img)
+        
+        img = self.preprocess(img)
+
+        return img, label
+
+
+    def preprocess(self, frame):
+        frame = frame / 255.0
+        frame = (frame - self.mean) / self.std
+
+        return frame
+
+    # Shuffling the data after every single epoch
+    def on_epoch_end(self):
+        idx = random.sample(population= list(range(self.__len__())), k=self.__len__())
+        self.imgarr = self.imgarr[idx]
+        self.lables = self.labels[idx]
 
 # Source
 # https://patrykchrabaszcz.github.io/Imagenet32/

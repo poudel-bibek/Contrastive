@@ -10,10 +10,11 @@ from optimizer import LARS
 from loss import SimCLR_Loss
 
 from torch.utils.data import Dataset, DataLoader
-from data_utils import DataGenerator
+from data_utils import DataGenerator, DownstreamDataGenerator
 from data_utils import load_data
+from ds_model import DSModel
 
-class Trainer:
+class DownstreamTrainer:
     def __init__(self, args):
         self.args = args 
         self.writer = SummaryWriter()
@@ -39,39 +40,32 @@ class Trainer:
                                                                                                     train_targets.shape[0],
                                                                                                     val_images.shape[0],
                                                                                                     val_targets.shape[0]))
-        # Get Dataloaders here, but why not labels used?
-        # This is unsupervised, labels dont matter 
 
-        self.datagen_train = DataGenerator('train', train_images)
+        # The number of classes is equal to 10 since the dataset is the CIFAR-10 dataset
+        self.datagen_train = DownstreamDataGenerator('train', train_images, train_targets, num_classes=10)
         self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True)
 
-        # So what are we trying to validate ? if we dont have labels
-        datagen_val = DataGenerator('train', val_images)
-        self.val_dataloader = DataLoader(datagen_val, self.args.val_batch_size, drop_last = True)
+        self.datagen_val = DownstreamDataGenerator('train', val_images, val_targets, num_classes=10)
+        self.val_dataloader = DataLoader(self.datagen_val, self.args.val_batch_size, drop_last = True)
 
 
-        self.net = PreModel('resnet50').to(self.device)
-        self.criterion = SimCLR_Loss(self.args.train_batch_size, self.args.temperature)
-        self.optimizer = LARS([params for params in self.net.parameters() if params.requires_grad],
-            lr=self.args.lr,
-            weight_decay=self.args.weight_decay,
-            exclude_from_weight_decay=["batch_normalization", "bias"],
-        )
-
-        self.warmupscheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda epoch: (epoch+1) / 10.0, verbose=True)
-
-        # The default for last_epoch is -1 to begin with so I'm not sure why they specify it here
-        self.mainscheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(self.optimizer, 500, eta_min=0.05, last_epoch=-1, verbose=True)
+        self.net = DSModel().to(self.device)
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.SGD([params for params in self.net.parameters() if params.requires_grad], lr=0.01, momentum=0.9)
+        self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.98, last_epoch=-1, verbose=True)
 
         print("\n--------------------------------")
         print("Total No. of Trainable Parameters: ",sum(p.numel() for p in self.net.parameters() if p.requires_grad))
 
     def train(self):
         train_loss_collector = np.zeros(self.args.train_epochs)
+        train_accuracy_collector = np.zeros(self.args.train_epochs)
+
         val_loss_collector = np.zeros(self.args.train_epochs) # Validate every epoch as well
+        val_accuracy_collector = np.zeros(self.args.train_epochs)
 
         best_loss = float('inf')
-        logfile = open('./logs/logfile.txt', 'w')
+        logfile = open('./logs/ds_logfile.txt', 'w')
 
         print("\n#### Started Training ####")
         logfile.write("\n#### Started Training ####\n")
@@ -79,8 +73,10 @@ class Trainer:
         for i in range(self.args.train_epochs):
             self.net.train()
 
+            acc_sublist = np.array([])
+
             if i==0:
-                myfile = open('./logs/model_init_weights.txt', 'w')
+                myfile = open('./logs/ds_model_init_weights.txt', 'w')
                 myfile.write("SEED = %s\n" % self.args.seed)
                 print("Writing Model Initial Weights to a file\n")
                 for param in self.net.parameters():
@@ -95,48 +91,71 @@ class Trainer:
             ground_truths_train =[]
             predictions_train =[]
 
-            for bi, (x_i, x_j) in enumerate(self.train_dataloader):
-                x_i = x_i.squeeze().to(self.device).float()
-                x_j = x_j.squeeze().to(self.device).float()
+            for bi, (img, label) in enumerate(self.train_dataloader):
+                img = img.squeeze().to(self.device).float()
+                label = label.to(self.device)
         
-                z_i = self.net(x_i)
-                z_j = self.net(x_i)
+                pred = self.net(img)
 
                 self.optimizer.zero_grad() 
-                loss = self.criterion(z_i, z_j)
+                loss = self.criterion(pred, label)
 
                 loss.backward()
+
+                # Not sure why this line is specifically placed inbetween the loss.backward call and the optimizer.step call or if it needs to be here
+                preds = torch.exp(pred.cpu().data) / torch.sum(torch.exp(pred.cpu().data))
+
                 self.optimizer.step() 
 
                 loss_np = loss.cpu().detach().numpy()
                 self.writer.add_scalar("Batch Loss, Train:", loss_np, bi)
 
+                acc_sublist = np.append(acc_sublist,np.array(np.argmax(preds,axis=1)==label.cpu().data.view(-1)).astype('int'),axis=0)
+
                 batch_loss_train += loss_np 
 
-            if i < 10:
-                self.warmupscheduler.step()
-            if i >= 10:
-                self.mainscheduler.step()
-
-            self.datagen_train.on_epoch_end()
 
             # Average Batch Loss per epoch
             avg_batch_loss_train = batch_loss_train / len(self.train_dataloader)
             print("Train: ABL {}".format(round(avg_batch_loss_train,3)), end="\t")
             logfile.write("Train: ABL {}".format(round(avg_batch_loss_train,3)))
 
+            # Average Accuracy per epoch
+            avg_accuracy_train = np.mean(acc_sublist)
+            print("Train: ACC {}".format(round(avg_accuracy_train,3)), end="\t")
+            logfile.write("Train: ACC {}".format(round(avg_accuracy_train,3)))
+
+            # Validating here
+            avg_batch_loss_val, avg_accuracy_val = self.validate()
+
+            # Average Validation Batch Loss per epoch
+            print("Val: ABL {}".format(round(avg_batch_loss_val,3)), end="\t")
+            logfile.write("Val: ABL {}".format(round(avg_batch_loss_val,3)))
+
+            # Average Validation Accuracy per epoch
+            print("Val: ACC {}".format(round(avg_accuracy_val,3)), end="\t")
+            logfile.write("Val: ACC {}".format(round(avg_accuracy_val,3)))
+
             print("Time: {} s".format(round(time.time() - start, 1))) #LR: {}".format(round(time.time() - start, 1), self.optimizer.param_groups[0]['lr'] )) 
             logfile.write("Time: {} s".format(round(time.time() - start, 1)))
 
             # Generally should be looking at validation loss here but..
-            if avg_batch_loss_train < best_loss:
-
-                best_loss = avg_batch_loss_train
+            if avg_batch_loss_val < best_loss:
+                best_loss = avg_batch_loss_val
                 print("#### New Model Saved #####")
                 logfile.write("#### New Model Saved #####\n")
-                torch.save(self.net, './Saved_models/trained_model.pt')
+                torch.save(self.net, './Saved_models/ds_trained_model.pt')
+            
+            self.lr_scheduler.step()
+
+            self.datagen_train.on_epoch_end()
+            self.datagen_val.on_epoch_end()
 
             train_loss_collector[i] = avg_batch_loss_train
+            train_accuracy_collector[i] = avg_accuracy_train
+
+            val_loss_collector[i] = avg_batch_loss_val
+            val_accuracy_collector[i] = avg_accuracy_val
 
         self.writer.flush() 
         self.writer.close()
@@ -147,21 +166,55 @@ class Trainer:
 
         ax.set_ylabel("MSE Loss (Training )") # & Validation
         ax.plot(np.asarray(train_loss_collector))
-        #ax.plot(np.asarray(val_loss_collector)) # No validation yet
+        ax.plot(np.asarray(val_loss_collector))
 
         ax.set_xticks(xticks) #;
-        ax.legend(["Training"]) # ["Validation", "Training"]
-        fig.savefig('./logs/training_result.png')
+        ax.legend(["Training", "Validation"]) # ["Validation", "Training"]
+        fig.savefig('./logs/ds_training_result.png')
 
         print("#### Ended Training ####")
         logfile.write("#### Ended Training ####")
         logfile.close()
         # Plot AMA as well
 
+    def validate(self):     
+        self.net.eval()
 
+        with torch.no_grad():
+            acc_sublist = np.array([])
+            batch_loss_val = 0
+
+            for bi, (img, label) in enumerate(self.val_dataloader):
+                img = img.squeeze().to(self.device).float()
+                label = label.to(self.device)
+        
+                pred = self.net(img)
+
+                self.optimizer.zero_grad() 
+                loss = self.criterion(pred, label)
+
+                loss.backward()
+
+                # Not sure why this line is specifically placed inbetween the loss.backward call and the optimizer.step call or if it needs to be here
+                preds = torch.exp(pred.cpu().data) / torch.sum(torch.exp(pred.cpu().data))
+
+                loss_np = loss.cpu().detach().numpy()
+                self.writer.add_scalar("Batch Loss, Train:", loss_np, bi)
+
+                acc_sublist = np.append(acc_sublist,np.array(np.argmax(preds,axis=1)==label.cpu().data.view(-1)).astype('int'),axis=0)
+
+                batch_loss_val += loss_np
+
+        avg_batch_loss_val =  batch_loss_val / len(self.val_dataloader)
+        avg_accuracy_val = np.mean(acc_sublist)
+
+        return avg_batch_loss_val, avg_accuracy_val
+
+
+    
 
 def main(args):
-    tr = Trainer(args)
+    tr = DownstreamTrainer(args)
     tr.train()
 
 if __name__ == "__main__":
@@ -171,7 +224,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_batch_size",type = int, default = 4, help = "Train batch size")
     parser.add_argument("--temperature",type = int, default = 0.5, help = "For the Loss function")
     parser.add_argument("--val_batch_size",type = int, default = 4, help = "Train batch size")
-    parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
+    parser.add_argument("--train_epochs", type = int, default = 10, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 0.01, help = "Learning Rate")
     parser.add_argument("--weight_decay", type=float, default = 1e-6, help = "Weight Decay")
 

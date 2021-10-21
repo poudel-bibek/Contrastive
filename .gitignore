@@ -12,3 +12,9 @@ runs/*
 ./runs/*
 
 __pycache__
+
+./Saved_models/
+./Saved_models/*
+Saved_models/
+
+runs/
