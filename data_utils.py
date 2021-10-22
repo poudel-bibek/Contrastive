@@ -18,7 +18,7 @@ class DataGenerator(Dataset):
         self.imgarr = imgarr # I believe that this is a batch of images as further evidenced by the length function
         self.s = s
         self.transforms = transforms.Compose([transforms.RandomHorizontalFlip(0.5),
-                                                transforms.RandomResizedCrop((66, 200), (0.8,1.0)),
+                                                transforms.RandomResizedCrop((64, 64), (0.8,1.0)),
                                                 transforms.Compose([transforms.RandomApply([transforms.ColorJitter(0.8*self.s, 
                                                                                                                     0.8*self.s, 
                                                                                                                     0.8*self.s, 
@@ -78,7 +78,7 @@ class DownstreamDataGenerator(Dataset):
         self.imgarr = imgarr
         self.labels = labels
 
-        self.transforms = transforms.RandomResizedCrop((66, 200), (0.8, 1.0))
+        self.transforms = transforms.RandomResizedCrop((64, 64), (0.8, 1.0))
 
         self.mean = np.array([[[[0.485]], [[0.456]], [[0.406]]]])
         self.std = np.array([[[[0.229]], [[0.224]], [[0.225]]]])

@@ -34,6 +34,13 @@ class Trainer:
         ## Data Loading operations
         train_images, train_targets, val_images, val_targets  = load_data(self.args.dataset_src)
 
+        # Reduing the size of train and val data to make training through SimCLR faster for now
+        train_images = train_images[:40000]
+        train_targets = train_targets[:40000]
+
+        val_images = val_images[:20000]
+        val_targets = val_targets[:20000]
+
         print("Data Directory: ", self.args.dataset_src)
         print("\nLoaded:\nTraining: {} Images, {} Targets\nValidation: {} Images, {} Targets".format(train_images.shape[0],
                                                                                                     train_targets.shape[0],
@@ -58,10 +65,13 @@ class Trainer:
             exclude_from_weight_decay=["batch_normalization", "bias"],
         )
 
-        self.warmupscheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda epoch: (epoch+1) / 10.0, verbose=True)
+        # I removed both of the schedulers as they resulted in some errors being thrown in regards to memory
+        # I plan to add them back after doing the downstream task, but for now, I just want to get the whole pipeline working
 
-        # The default for last_epoch is -1 to begin with so I'm not sure why they specify it here
-        self.mainscheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(self.optimizer, 500, eta_min=0.05, last_epoch=-1, verbose=True)
+        # self.warmupscheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda epoch: (epoch+1) / 10.0, verbose=True)
+
+        # # The default for last_epoch is -1 to begin with so I'm not sure why they specify it here
+        # self.mainscheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(self.optimizer, 500, eta_min=0.05, last_epoch=-1, verbose=True)
 
         print("\n--------------------------------")
         print("Total No. of Trainable Parameters: ",sum(p.numel() for p in self.net.parameters() if p.requires_grad))
@@ -113,16 +123,16 @@ class Trainer:
 
                 batch_loss_train += loss_np 
 
-            if i < 10:
-                self.warmupscheduler.step()
-            if i >= 10:
-                self.mainscheduler.step()
+            # if i < 10:
+            #     self.warmupscheduler.step()
+            # if i >= 10:
+            #     self.mainscheduler.step()
 
             self.datagen_train.on_epoch_end()
 
             # Average Batch Loss per epoch
             avg_batch_loss_train = batch_loss_train / len(self.train_dataloader)
-            print("Train: ABL {}".format(round(avg_batch_loss_train,3)), end="\t")
+            print("Train: ABL {}".format(round(avg_batch_loss_train,5)), end="\t")
             logfile.write("Train: ABL {}".format(round(avg_batch_loss_train,3)))
 
             print("Time: {} s".format(round(time.time() - start, 1))) #LR: {}".format(round(time.time() - start, 1), self.optimizer.param_groups[0]['lr'] )) 
@@ -171,7 +181,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_batch_size",type = int, default = 4, help = "Train batch size")
     parser.add_argument("--temperature",type = int, default = 0.5, help = "For the Loss function")
     parser.add_argument("--val_batch_size",type = int, default = 4, help = "Train batch size")
-    parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
+    parser.add_argument("--train_epochs", type = int, default = 10, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 0.01, help = "Learning Rate")
     parser.add_argument("--weight_decay", type=float, default = 1e-6, help = "Weight Decay")
 
