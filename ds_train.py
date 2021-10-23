@@ -100,6 +100,9 @@ class DownstreamTrainer:
             ground_truths_train =[]
             predictions_train =[]
 
+            correct = 0
+            total = 0
+
             for bi, (img, label) in enumerate(self.train_dataloader):
                 img = img.squeeze().to(self.device).float()
                 label = label.type(torch.LongTensor)
@@ -113,7 +116,10 @@ class DownstreamTrainer:
                 loss.backward()
 
                 # Not sure why this line is specifically placed inbetween the loss.backward call and the optimizer.step call or if it needs to be here
-                preds = torch.exp(pred) / torch.sum(torch.exp(pred))
+                #preds = torch.exp(pred) / torch.sum(torch.exp(pred))
+                _, predicted = torch.max(pred.data, 1)
+                total += label.size(0)
+                correct += (predicted == label).sum().item()
 
                 self.optimizer.step() 
 
@@ -121,7 +127,8 @@ class DownstreamTrainer:
                 self.writer.add_scalar("Batch Loss, Train:", loss_np, bi)
 
                 # I have no confidence if this line is doing what it is supposed to do (as in actually calculate the accuracy)
-                acc_sublist = np.append(acc_sublist, np.array(np.argmax(preds.cpu().detach().clone().numpy(),axis=1)==label.cpu().detach().clone().numpy()).astype('int'),axis=0)
+                #acc_sublist = np.append(acc_sublist, np.array(np.argmax(preds.cpu().detach().clone().numpy(),axis=1)==label.cpu().detach().clone().numpy()).astype('int'),axis=0)
+
 
                 batch_loss_train += loss_np 
 
@@ -132,7 +139,8 @@ class DownstreamTrainer:
             logfile.write("Train: ABL {}".format(round(avg_batch_loss_train,3)))
 
             # Average Accuracy per epoch
-            avg_accuracy_train = np.mean(acc_sublist)
+            #avg_accuracy_train = np.mean(acc_sublist)
+            avg_accuracy_train = (100 * correct / total)
             print("Train: ACC {}".format(round(avg_accuracy_train,3)), end="\t")
             logfile.write("Train: ACC {}".format(round(avg_accuracy_train,3)))
 
@@ -194,6 +202,9 @@ class DownstreamTrainer:
         with torch.no_grad():
             acc_sublist = np.array([])
             batch_loss_val = 0
+            
+            correct = 0
+            total = 0
 
             for bi, (img, label) in enumerate(self.val_dataloader):
                 img = img.squeeze().to(self.device).float()
@@ -206,17 +217,22 @@ class DownstreamTrainer:
                 loss = self.criterion(pred, label)
 
                 # Not sure why this line is specifically placed inbetween the loss.backward call and the optimizer.step call or if it needs to be here
-                preds = torch.exp(pred) / torch.sum(torch.exp(pred))
+                #preds = torch.exp(pred) / torch.sum(torch.exp(pred))
+
+                _, predicted = torch.max(pred.data, 1)
+                total += label.size(0)
+                correct += (predicted == label).sum().item()
 
                 loss_np = loss.cpu().detach().numpy()
                 self.writer.add_scalar("Batch Loss, Val:", loss_np, bi)
 
-                acc_sublist = np.append(acc_sublist, np.array(np.argmax(preds.cpu().detach().clone().numpy(),axis=1)==label.cpu().detach().clone().numpy()).astype('int'),axis=0)
+                #acc_sublist = np.append(acc_sublist, np.array(np.argmax(preds.cpu().detach().clone().numpy(),axis=1)==label.cpu().detach().clone().numpy()).astype('int'),axis=0)
 
                 batch_loss_val += loss_np
 
         avg_batch_loss_val =  batch_loss_val / len(self.val_dataloader)
-        avg_accuracy_val = np.mean(acc_sublist)
+        #avg_accuracy_val = np.mean(acc_sublist)
+        avg_accuracy_val = (100 * correct / total)
 
         return avg_batch_loss_val, avg_accuracy_val
 
