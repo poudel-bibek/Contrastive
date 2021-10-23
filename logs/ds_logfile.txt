@@ -1,0 +1,8 @@
+
+#### Started Training ####
+Ep. 1/10:	Train: ABL 31.762Train: ACC 0.002Val: ABL 42.246Val: ACC 0.001Time: 155.5 s#### New Model Saved #####
+Ep. 2/10:	Train: ABL 31.482Train: ACC 0.001Val: ABL 38.276Val: ACC 0.001Time: 155.5 s#### New Model Saved #####
+Ep. 3/10:	Train: ABL 30.591Train: ACC 0.001Val: ABL 38.341Val: ACC 0.001Time: 153.2 sEp. 4/10:	Train: ABL 29.435Train: ACC 0.001Val: ABL 35.357Val: ACC 0.001Time: 153.7 s#### New Model Saved #####
+Ep. 5/10:	Train: ABL 28.538Train: ACC 0.001Val: ABL 31.842Val: ACC 0.001Time: 153.2 s#### New Model Saved #####
+Ep. 6/10:	Train: ABL 27.814Train: ACC 0.001Val: ABL 32.551Val: ACC 0.001Time: 153.7 sEp. 7/10:	Train: ABL 27.005Train: ACC 0.001Val: ABL 34.678Val: ACC 0.001Time: 152.9 sEp. 8/10:	Train: ABL 26.394Train: ACC 0.001Val: ABL 29.993Val: ACC 0.001Time: 155.2 s#### New Model Saved #####
+Ep. 9/10:	Train: ABL 25.588Train: ACC 0.001Val: ABL 34.865Val: ACC 0.001Time: 155.2 sEp. 10/10:	Train: ABL 25.0Train: ACC 0.001Val: ABL 31.306Val: ACC 0.001Time: 153.2 s#### Ended Training ####

@@ -50,15 +50,15 @@ class DownstreamTrainer:
                                                                                                     val_targets.shape[0]))
 
         # Num classes is set to 1000 since that's how many there are in mini ImageNet
-        self.datagen_train = DownstreamDataGenerator('train', train_images, train_targets, num_classes=1000)
+        self.datagen_train = DownstreamDataGenerator('train', train_images, train_targets, num_classes=1001)
         self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True)
 
-        self.datagen_val = DownstreamDataGenerator('train', val_images, val_targets, num_classes=1000)
+        self.datagen_val = DownstreamDataGenerator('train', val_images, val_targets, num_classes=1001)
         self.val_dataloader = DataLoader(self.datagen_val, self.args.val_batch_size, drop_last = True)
 
         self.premodel = torch.load('./Saved_models/trained_model.pt')
 
-        self.net = DSModel(self.premodel, 100).to(self.device)
+        self.net = DSModel(self.premodel, 1001).to(self.device)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD([params for params in self.net.parameters() if params.requires_grad], lr=0.01, momentum=0.9)
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=1, gamma=0.98, last_epoch=-1, verbose=True)
@@ -102,8 +102,9 @@ class DownstreamTrainer:
 
             for bi, (img, label) in enumerate(self.train_dataloader):
                 img = img.squeeze().to(self.device).float()
+                label = label.type(torch.LongTensor)
                 label = label.to(self.device)
-        
+
                 pred = self.net(img)
 
                 self.optimizer.zero_grad() 
@@ -112,14 +113,15 @@ class DownstreamTrainer:
                 loss.backward()
 
                 # Not sure why this line is specifically placed inbetween the loss.backward call and the optimizer.step call or if it needs to be here
-                preds = torch.exp(pred.cpu().data) / torch.sum(torch.exp(pred.cpu().data))
+                preds = torch.exp(pred) / torch.sum(torch.exp(pred))
 
                 self.optimizer.step() 
 
-                loss_np = loss.cpu().detach().numpy()
+                loss_np = loss.cpu().detach().clone().numpy()
                 self.writer.add_scalar("Batch Loss, Train:", loss_np, bi)
 
-                acc_sublist = np.append(acc_sublist,np.array(np.argmax(preds,axis=1)==label.cpu().data.view(-1)).astype('int'),axis=0)
+                # I have no confidence if this line is doing what it is supposed to do (as in actually calculate the accuracy)
+                acc_sublist = np.append(acc_sublist, np.array(np.argmax(preds.cpu().detach().clone().numpy(),axis=1)==label.cpu().detach().clone().numpy()).astype('int'),axis=0)
 
                 batch_loss_train += loss_np 
 
@@ -195,6 +197,7 @@ class DownstreamTrainer:
 
             for bi, (img, label) in enumerate(self.val_dataloader):
                 img = img.squeeze().to(self.device).float()
+                label = label.type(torch.LongTensor)
                 label = label.to(self.device)
         
                 pred = self.net(img)
@@ -202,15 +205,13 @@ class DownstreamTrainer:
                 self.optimizer.zero_grad() 
                 loss = self.criterion(pred, label)
 
-                loss.backward()
-
                 # Not sure why this line is specifically placed inbetween the loss.backward call and the optimizer.step call or if it needs to be here
-                preds = torch.exp(pred.cpu().data) / torch.sum(torch.exp(pred.cpu().data))
+                preds = torch.exp(pred) / torch.sum(torch.exp(pred))
 
                 loss_np = loss.cpu().detach().numpy()
-                self.writer.add_scalar("Batch Loss, Train:", loss_np, bi)
+                self.writer.add_scalar("Batch Loss, Val:", loss_np, bi)
 
-                acc_sublist = np.append(acc_sublist,np.array(np.argmax(preds,axis=1)==label.cpu().data.view(-1)).astype('int'),axis=0)
+                acc_sublist = np.append(acc_sublist, np.array(np.argmax(preds.cpu().detach().clone().numpy(),axis=1)==label.cpu().detach().clone().numpy()).astype('int'),axis=0)
 
                 batch_loss_val += loss_np
 
