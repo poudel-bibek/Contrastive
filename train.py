@@ -38,8 +38,11 @@ class Trainer:
         self.datagen_train = DataGenerator('train', train_dir)
         self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True, shuffle=True)
 
-        datagen_val = DataGenerator('train', val_dir)
-        self.val_dataloader = DataLoader(datagen_val, self.args.val_batch_size, drop_last = True)
+        datagen_val = DataGenerator('val', val_dir)
+        self.val_dataloader = DataLoader(datagen_val, self.val_batch_size, drop_last = True)
+
+        # datagen_test = DataGenerator('test', val_dir)
+        # self.test_dataloader = DataLoader(datagen_test, self.val_batch_size, drop_last = True)
 
         self.net = PreModel('resnet50').to(self.device)
         self.criterion = SimCLR_Loss(self.args.train_batch_size, self.args.temperature)
@@ -117,7 +120,7 @@ class Trainer:
             logfile.write("Train: ABL {}".format(round(avg_batch_loss_train,3)))
 
             # Val loss per epoch
-            avg_batch_loss_val = self.validate(self.net)
+            avg_batch_loss_val = self.validate(self.net, self.val_dataloader)
             val_loss_collector[i] = avg_batch_loss_val
 
             print("Val: ABL {},".format(round(avg_batch_loss_val,3)), end = "\t")
@@ -155,21 +158,22 @@ class Trainer:
         logfile.write("#### Ended Training ####\n\n #### Performing Test ####")
 
         # Just reuse the same code from validate but dont pass model, load the best model from directory
-        new_model = PreModel('resnet50').to(self.device)
-        new_model.load_state_dict(torch.load('./Saved_models/trained_model.pt', map_location=torch.device('cpu')).state_dict()) # To aviod running out of memory, do this in CPU. Can I flush GPU memory instead?
-        avg_batch_loss_test = self.validate(new_model) 
-        print("Test: ABL {},".format(round(avg_batch_loss_test,3)), end = "\t")
-        logfile.write("Test: ABL {}\n".format(round(avg_batch_loss_test,3)))
+        # Just reuse the same code from validate but dont pass model, load the best model from directory
+        # new_model = PreModel('resnet50').to(self.device)
+        # new_model.load_state_dict(torch.load('./Saved_models/trained_model.pt', map_location=torch.device('cpu')).state_dict()) # To aviod running out of memory, do this in CPU. Can I flush GPU memory instead?
+        # avg_batch_loss_test = self.validate(new_model, self.test_dataloader) 
+        # print("Test: ABL {},".format(round(avg_batch_loss_test,3)), end = "\t")
+        # logfile.write("Test: ABL {}\n".format(round(avg_batch_loss_test,3)))
 
         logfile.close()
 
-    def validate(self, current_model):
+    def validate(self, current_model, dataloader):
 
         current_model.eval()  
         batch_loss_val=0
 
         with torch.no_grad():
-            for bi, (x_i, x_j) in enumerate(tqdm(self.val_dataloader)):
+            for bi, (x_i, x_j) in enumerate(tqdm(dataloader)):
                 x_i = x_i.squeeze().to(self.device).float()
                 x_j = x_j.squeeze().to(self.device).float()
 
