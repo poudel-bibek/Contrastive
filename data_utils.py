@@ -1,7 +1,5 @@
 
 import os
-#import lasagne
-import random
 import pickle
 import numpy as np
 from PIL import Image
@@ -11,7 +9,10 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms, models
 
 # Source
+# Code obtained from https://gist.github.com/sadimanna/07729a36aca588ccf53a15f4723dee8a#file-simclr_ds_datagen-py
 # Code obtained from https://gist.github.com/sadimanna/c247acde2edbdd744182b0789acd31d6#file-simclr_datagen-py
+# here: https://pytorch.org/vision/stable/models.html
+
 to_tensor_trans = transforms.ToTensor()
 def get_img_paths(src_dir):
     # In the future, modify this to return corresponding labels as well for downstream task
@@ -37,14 +38,8 @@ class DataGenerator(Dataset):
                                                 transforms.GaussianBlur(7),
                                             ])
 
-        # These axes were given for CIFAR10, but why for ImageNet?
-        # self.mean = np.mean(imgarr / 255.0, axis=(0, 2, 3), keepdims=True)
-        # self.std = np.mean(imgarr / 255.0, axis=(0, 2, 3), keepdims=True)
-        # print("mean =", self.mean)
-        # print("std = ", self.std)
-        # Takes too much memory 
+
         
-        # taken from here: https://pytorch.org/vision/stable/models.html
         self.mean = np.array([[[[0.485]], [[0.456]], [[0.406]]]])
         self.std = np.array([[[[0.229]], [[0.224]], [[0.225]]]])
 
@@ -80,11 +75,6 @@ class DataGenerator(Dataset):
         else:
             return frame
     
-    def on_epoch_end(self):
-        self.imgarr = self.imgarr[random.sample(population=list(range(self.__len__())), k=self.__len__())]
-
-# Source
-# Code obtained from https://gist.github.com/sadimanna/07729a36aca588ccf53a15f4723dee8a#file-simclr_ds_datagen-py
 
 
 class DownstreamDataGenerator(Dataset):
@@ -122,51 +112,41 @@ class DownstreamDataGenerator(Dataset):
 
         return frame
 
-    # Shuffling the data after every single epoch
-    def on_epoch_end(self):
-        idx = random.sample(population= list(range(self.__len__())), k=self.__len__())
-        self.imgarr = self.imgarr[idx]
-        self.lables = self.labels[idx]
 
 # Source
 # https://patrykchrabaszcz.github.io/Imagenet32/
 
-def unpickle(file):
-    with open(file, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    return dict
+# def unpickle(file):
+#     with open(file, 'rb') as fo:
+#         dict = pickle.load(fo, encoding='bytes')
+#     return dict
     
-def load_data(data_dir):
-    train_files = ['train_data_batch_1'] #'train_data_batch_2'] # For now just use 2 
-    val_file = 'val_data'
-    data_dir = data_dir
+# def load_data(data_dir):
+#     train_files = ['train_data_batch_1'] #'train_data_batch_2'] # For now just use 2 
+#     val_file = 'val_data'
+#     data_dir = data_dir
     
-    im_shape = 12288 # 64x64x3
-    train_images = np.array([],dtype=np.uint8).reshape((0,im_shape))
-    train_labels = np.array([])
+#     im_shape = 12288 # 64x64x3
+#     train_images = np.array([],dtype=np.uint8).reshape((0,im_shape))
+#     train_labels = np.array([])
 
-    for tf in train_files:
-        data_dict = unpickle(data_dir+ tf)
-        data = data_dict['data']
-        train_images = np.append(train_images, data, axis =0)
-        train_labels = np.append(train_labels, data_dict['labels'])
+#     for tf in train_files:
+#         data_dict = unpickle(data_dir+ tf)
+#         data = data_dict['data']
+#         train_images = np.append(train_images, data, axis =0)
+#         train_labels = np.append(train_labels, data_dict['labels'])
 
-    testimages = np.array([],dtype=np.uint8).reshape((0,im_shape))
-    testlabels = np.array([])
+#     testimages = np.array([],dtype=np.uint8).reshape((0,im_shape))
+#     testlabels = np.array([])
 
-    test_dict = unpickle(data_dir + val_file)
-    testimages = np.append(testimages,test_dict['data'], axis =0 )
-    testlabels = np.append(testlabels,test_dict['labels'])
+#     test_dict = unpickle(data_dir + val_file)
+#     testimages = np.append(testimages,test_dict['data'], axis =0 )
+#     testlabels = np.append(testlabels,test_dict['labels'])
 
-    train_images = train_images.reshape((-1,3,64,64)).astype(float)
-    testimages = testimages.reshape((-1,3,64,64)).astype(float)
+#     train_images = train_images.reshape((-1,3,64,64)).astype(float)
+#     testimages = testimages.reshape((-1,3,64,64)).astype(float)
 
-    return train_images, train_labels, testimages, testlabels
-
-# Use case
-# dat, lab, dat_2, lab_2 = load_data() 
-# print("Image Data", dat.shape, dat_2.shape)
-# print("Labels:", lab.shape, lab_2.shape)
+#     return train_images, train_labels, testimages, testlabels
 
 
 
