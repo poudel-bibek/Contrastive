@@ -49,7 +49,7 @@ class Trainer:
         # This is unsupervised, labels dont matter 
 
         self.datagen_train = DataGenerator('train', train_dir)
-        self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True)
+        self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True, shuffle=True)
 
         # So what are we trying to validate ? if we dont have labels
         datagen_val = DataGenerator('train', val_dir)
