@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from model import PreModel
 from optimizer import LARS
 from loss import SimCLR_Loss
-
+from tqdm import tqdm
 from torch.utils.data import  DataLoader
 from data_utils import DataGenerator
 #from data_utils import load_data
@@ -88,7 +88,7 @@ class Trainer:
             print("Ep. {}/{}:".format(i+1, self.args.train_epochs), end="\t")
             logfile.write("Ep. {}/{}:\t".format(i+1, self.args.train_epochs))
 
-            for bi, (x_i, x_j) in enumerate(self.train_dataloader):
+            for bi, (x_i, x_j) in enumerate(tqdm(self.train_dataloader)):
                 x_i = x_i.squeeze().to(self.device).float()
                 x_j = x_j.squeeze().to(self.device).float()
         
@@ -169,7 +169,7 @@ class Trainer:
         batch_loss_val=0
 
         with torch.no_grad():
-            for bi, (x_i, x_j) in enumerate(self.val_dataloader):
+            for bi, (x_i, x_j) in enumerate(tqdm(self.val_dataloader)):
                 x_i = x_i.squeeze().to(self.device).float()
                 x_j = x_j.squeeze().to(self.device).float()
 

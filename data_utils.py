@@ -49,8 +49,15 @@ class DataGenerator(Dataset):
     
     def _get_img(self, idx):
         path = self.img_paths[idx]
-        img = Image.open(path).convert("RGB")
-        # Putting this hear instead of in self.transforms so it will work for both train/val
+        try: 
+            img = Image.open(path).convert("RGB")
+            # Putting this hear instead of in self.transforms so it will work for both train/val
+
+        except PIL.UnidentifiedImageError:
+            print("Problem with reading")
+
+        # What to do if this error occurs?
+        
         x = to_tensor_trans(img)
         return x
 
