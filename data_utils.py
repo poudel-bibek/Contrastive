@@ -4,6 +4,7 @@ import os
 import random
 import pickle
 import numpy as np
+from PIL import Image
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -11,22 +12,31 @@ from torchvision import datasets, transforms, models
 
 # Source
 # Code obtained from https://gist.github.com/sadimanna/c247acde2edbdd744182b0789acd31d6#file-simclr_datagen-py
+to_tensor_trans = transforms.ToTensor()
+def get_img_paths(src_dir):
+    # In the future, modify this to return corresponding labels as well for downstream task
+    img_paths = []
+    for label_dir in os.listdir(src_dir):
+        label_dir = os.path.join(src_dir, label_dir)
+        img_paths += [os.path.join(label_dir, img_name) for img_name in os.listdir(label_dir)]    
+    return img_paths
 
 class DataGenerator(Dataset):
-    def __init__(self, phase, imgarr, s=0.5):
+    def __init__(self, phase, img_dir, s=0.5):
         self.phase = phase
-        self.imgarr = imgarr # I believe that this is a batch of images as further evidenced by the length function
+        self.img_paths = get_img_paths(img_dir)
         self.s = s
-        self.transforms = transforms.Compose([transforms.RandomHorizontalFlip(0.5),
+        self.transforms = transforms.Compose([
+                                                transforms.RandomHorizontalFlip(0.5),
                                                 transforms.RandomResizedCrop((64, 64), (0.8,1.0)),
                                                 transforms.Compose([transforms.RandomApply([transforms.ColorJitter(0.8*self.s, 
                                                                                                                     0.8*self.s, 
                                                                                                                     0.8*self.s, 
                                                                                                                     0.2*self.s)], p=0.8),
                                                                     transforms.RandomGrayscale(p=0.2)]),
-                                                transforms.GaussianBlur(7)
+                                                transforms.GaussianBlur(7),
                                             ])
-    
+
         # These axes were given for CIFAR10, but why for ImageNet?
         # self.mean = np.mean(imgarr / 255.0, axis=(0, 2, 3), keepdims=True)
         # self.std = np.mean(imgarr / 255.0, axis=(0, 2, 3), keepdims=True)
@@ -39,14 +49,21 @@ class DataGenerator(Dataset):
         self.std = np.array([[[[0.229]], [[0.224]], [[0.225]]]])
 
     def __len__(self):
-        return self.imgarr.shape[0]
+        
+        return len(self.img_paths)
     
-    def __getitem__(self, idx):
-        x = self.imgarr[idx]
-        x = x.astype(np.float32) / 255.0 # if its done here, why done in init as well?
+    def _get_img(self, idx):
+        path = self.img_paths[idx]
+        img = Image.open(path).convert("RGB")
+        # Putting this hear instead of in self.transforms so it will work for both train/val
+        x = to_tensor_trans(img)
+        return x
 
-        x1 = self.augment(torch.from_numpy(x))
-        x2 = self.augment(torch.from_numpy(x))
+
+    def __getitem__(self, idx):
+        x = self._get_img(idx)
+        x1 = self.augment(x)
+        x2 = self.augment(x)
 
         x1 = self.preprocess(x1)
         x2 = self.preprocess(x2)
@@ -59,17 +76,16 @@ class DataGenerator(Dataset):
     
     def augment(self, frame, transformations=None):
         if self.phase == 'train':
-            frame = self.transforms(frame)
+            return self.transforms(frame)
         else:
             return frame
-        
-        return frame
     
     def on_epoch_end(self):
         self.imgarr = self.imgarr[random.sample(population=list(range(self.__len__())), k=self.__len__())]
 
 # Source
 # Code obtained from https://gist.github.com/sadimanna/07729a36aca588ccf53a15f4723dee8a#file-simclr_ds_datagen-py
+
 
 class DownstreamDataGenerator(Dataset):
     def __init__(self, phase, imgarr, labels, num_classes):
@@ -138,7 +154,7 @@ def load_data(data_dir):
     testimages = np.array([],dtype=np.uint8).reshape((0,im_shape))
     testlabels = np.array([])
 
-    test_dict =  unpickle(data_dir + val_file)
+    test_dict = unpickle(data_dir + val_file)
     testimages = np.append(testimages,test_dict['data'], axis =0 )
     testlabels = np.append(testlabels,test_dict['labels'])
 

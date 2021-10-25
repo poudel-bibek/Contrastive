@@ -3,6 +3,7 @@ import random
 import numpy as np
 import torch
 import argparse
+import os
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 from model import PreModel
@@ -32,28 +33,26 @@ class Trainer:
         print("Device Assigned to: ", self.device)
 
         ## Data Loading operations
-        train_images, train_targets, val_images, val_targets  = load_data(self.args.dataset_src)
+        #train_images, train_targets, val_images, val_targets  = load_data(self.args.dataset_src)
 
         # Reduing the size of train and val data to make training through SimCLR faster for now
-        train_images = train_images[:40000]
-        train_targets = train_targets[:40000]
+        # train_images = train_images[:40000]
+        # train_targets = train_targets[:40000]
 
-        val_images = val_images[:20000]
-        val_targets = val_targets[:20000]
+        # val_images = val_images[:20000]
+        # val_targets = val_targets[:20000]
 
         print("Data Directory: ", self.args.dataset_src)
-        print("\nLoaded:\nTraining: {} Images, {} Targets\nValidation: {} Images, {} Targets".format(train_images.shape[0],
-                                                                                                    train_targets.shape[0],
-                                                                                                    val_images.shape[0],
-                                                                                                    val_targets.shape[0]))
-        # Get Dataloaders here, but why not labels used?
+        train_dir = os.path.join(self.args.dataset_src, "train")
+        val_dir = os.path.join(self.args.dataset_src, "val")
+        # # Get Dataloaders here, but why not labels used?
         # This is unsupervised, labels dont matter 
 
-        self.datagen_train = DataGenerator('train', train_images)
+        self.datagen_train = DataGenerator('train', train_dir)
         self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True)
 
         # So what are we trying to validate ? if we dont have labels
-        datagen_val = DataGenerator('train', val_images)
+        datagen_val = DataGenerator('train', val_dir)
         self.val_dataloader = DataLoader(datagen_val, self.args.val_batch_size, drop_last = True)
 
 
@@ -128,7 +127,7 @@ class Trainer:
             # if i >= 10:
             #     self.mainscheduler.step()
 
-            self.datagen_train.on_epoch_end()
+            # self.datagen_train.on_epoch_end()
 
             # Average Batch Loss per epoch
             avg_batch_loss_train = batch_loss_train / len(self.train_dataloader)

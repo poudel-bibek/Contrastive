@@ -33,7 +33,7 @@ def save_imgs(npy_file, save_dir, num_imgs):
 
 
 # Path to ImageNet directory of numpy data
-imgnet_npy_dir = "/media/data/datasets/imgnet/64"
+imgnet_npy_dir = "/media/data/datasets/imgnet64"
 
 # Get the files in the directory
 npy_files = [
