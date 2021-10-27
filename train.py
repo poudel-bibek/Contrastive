@@ -36,14 +36,17 @@ class Trainer:
         val_dir = os.path.join(self.args.dataset_src, "val")
 
         self.datagen_train = DataGenerator('train', train_dir)
-        self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, drop_last = True, shuffle=True)
+        self.train_dataloader = DataLoader(self.datagen_train, self.args.train_batch_size, num_workers = 16, prefetch_factor=4, drop_last = True, shuffle=True)
 
         datagen_val = DataGenerator('val', val_dir)
-        self.val_dataloader = DataLoader(datagen_val, self.val_batch_size, drop_last = True)
+        self.val_dataloader = DataLoader(datagen_val, self.val_batch_size, num_workers = 16, prefetch_factor=4, drop_last = True)
 
         # datagen_test = DataGenerator('test', val_dir)
         # self.test_dataloader = DataLoader(datagen_test, self.val_batch_size, drop_last = True)
-
+        
+        print("\nTraining data size: {} X {}".format(len(self.train_dataloader), self.train_batch_size))
+        print("Validation data size: {} X {}\n".format(len(self.val_dataloader), self.val_batch_size))
+        
         self.net = PreModel('resnet50').to(self.device)
         self.criterion = SimCLR_Loss(self.args.train_batch_size, self.args.temperature)
 
@@ -196,11 +199,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
-    parser.add_argument("--train_batch_size",type = int, default = 4, help = "Train batch size")
+    parser.add_argument("--seed", type = int, default = 42, help = "Randomization Seed")
+    parser.add_argument("--train_batch_size",type = int, default = 128, help = "Train batch size")
+    parser.add_argument("--val_batch_size",type = int, default = 128, help = "Train batch size")
     parser.add_argument("--temperature",type = int, default = 0.5, help = "For the Loss function")
-    parser.add_argument("--val_batch_size",type = int, default = 4, help = "Train batch size")
-    parser.add_argument("--train_epochs", type = int, default = 10, help = "Number of epochs to do training")
+    parser.add_argument("--train_epochs", type = int, default = 100, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 4.8, help = "Learning Rate")
     parser.add_argument("--weight_decay", type=float, default = 1e-6, help = "Weight Decay")
     parser.add_argument("--dataset_src", default='./Data/Imagenet/64/', help="The source for creating dataset")
