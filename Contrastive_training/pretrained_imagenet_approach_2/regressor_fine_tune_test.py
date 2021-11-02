@@ -1,18 +1,22 @@
 """Fine tune the pretrained ResNet50 from PT Lightning for steering"""
 
 
+from os import name
 import time
 import random
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+from numpy.lib.function_base import angle
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+from generate_augs import generate_augmentations_random
 from pretrained_resnet import Pre_trained_resnet
 
-from regressor_utils  import DriveDataset
+from regressor_utils  import DriveDataset, prepare_data_names, DriveDatasetNames
 from regressor_utils  import prepare_data
 
 class Regressor:
@@ -33,20 +37,24 @@ class Regressor:
         print("Device Assigned to: ", self.device)
 
         # Constants + Hyperparams : Not set by terminal args
-        self.TRAIN_BATCH_SIZE = 128
-        self.VAL_BATCH_SIZE = 128
+        self.TRAIN_BATCH_SIZE = 32
+        self.VAL_BATCH_SIZE = 32
+
+
 
         print("Data Directory: ", self.args.train_data_dir)
-        train_images, train_targets, val_images, val_targets = prepare_data(self.args.train_data_dir)
+        prepare_data_names(self.args.train_data_dir)
+
+        train_images, train_targets, val_images, val_targets = prepare_data_names(self.args.train_data_dir)
         print("\nLoaded:\nTraining: {} Images, {} Targets\nValidation: {} Images, {} Targets".format(train_images.shape[0],
                                                                                                     train_targets.shape[0],
                                                                                                     val_images.shape[0],
                                                                                                     val_targets.shape[0]))
 
-        print("Each image has shape:{}".format(train_images.shape[-3:]))  
+        # print("Each image has shape:{}".format(train_images.shape[-3:]))  
 
-        self.train_dataset = DriveDataset(train_images, train_targets)
-        self.val_dataset = DriveDataset(val_images, val_targets)
+        self.train_dataset = DriveDatasetNames(train_images, train_targets)
+        self.val_dataset = DriveDatasetNames(val_images, val_targets)
 
 
         self.net = Pre_trained_resnet(freeze=2).to(self.device) #  Ignore the warning for now
@@ -77,7 +85,7 @@ class Regressor:
                                                     shuffle=True,
                                                     num_workers = 16, 
                                                     prefetch_factor=4, 
-                                                    drop_last = True)
+                                                    drop_last =False)
 
             self.val_dataloader = torch.utils.data.DataLoader(dataset=self.val_dataset,
                                                     batch_size=self.VAL_BATCH_SIZE,
@@ -106,9 +114,31 @@ class Regressor:
 
             for bi, data in enumerate(self.train_dataloader):
 
-                inputs_batch, targets_batch = data 
-                #print(inputs_batch)
-                ground_truths_train.extend(targets_batch.numpy())
+                name_batch, angle_batch = data 
+                ground_truths_train.extend(angle_batch.numpy())
+
+                name_batch = np.array(name_batch)
+                angle_batch = np.array(angle_batch)
+
+                targets_batch = []
+
+                inputs_batch = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[0]}")
+
+                for m in range(len(inputs_batch)):
+                    targets_batch.append(angle_batch[0])
+                
+                for n in range(1, len(name_batch)):
+                    aug_imgs = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[n]}")
+
+                    for j in range(len(aug_imgs)):
+                        targets_batch.append(angle_batch[n])
+                    
+                    inputs_batch = np.concatenate((inputs_batch, aug_imgs), axis=0)
+                
+                targets_batch = np.array(targets_batch)
+
+                inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
+                targets_batch = torch.tensor(targets_batch, dtype=torch.float32)
 
                 inputs_batch = inputs_batch.to(self.device)
                 targets_batch = targets_batch.to(self.device)
@@ -184,9 +214,31 @@ class Regressor:
 
         with torch.no_grad():
             for bi, data in enumerate(self.val_dataloader):
+                name_batch, angle_batch = data 
+                ground_truths_val.extend(angle_batch.numpy())
 
-                inputs_batch, targets_batch = data 
-                ground_truths_val.extend(targets_batch.numpy())
+                name_batch = np.array(name_batch)
+                angle_batch = np.array(angle_batch)
+
+                targets_batch = []
+
+                inputs_batch = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[0]}")
+
+                for m in range(len(inputs_batch)):
+                    targets_batch.append(angle_batch[0])
+                
+                for n in range(1, len(name_batch)):
+                    aug_imgs = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[n]}")
+
+                    for j in range(len(aug_imgs)):
+                        targets_batch.append(angle_batch[n])
+                    
+                    inputs_batch = np.concatenate((inputs_batch, aug_imgs), axis=0)
+                
+                targets_batch = np.array(targets_batch)
+
+                inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
+                targets_batch = torch.tensor(targets_batch, dtype=torch.float32)
 
                 inputs_batch = inputs_batch.to(self.device)
                 targets_batch = targets_batch.to(self.device)
@@ -253,7 +305,7 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_data_dir", default = "../Data/Steering_Angle", help = "Data Directory")
+    parser.add_argument("--train_data_dir", default = "./Contrastive_training/data", help = "Data Directory")
     parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
 
     parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")

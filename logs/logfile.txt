@@ -1,12 +1,3 @@
 
 #### Started Training ####
-Ep. 1/10:	Train: ABL 0.352Time: 881.2 s#### New Model Saved #####
-Ep. 2/10:	Train: ABL 0.351Time: 879.2 s#### New Model Saved #####
-Ep. 3/10:	Train: ABL 0.351Time: 880.1 s#### New Model Saved #####
-Ep. 4/10:	Train: ABL 0.351Time: 880.7 s#### New Model Saved #####
-Ep. 5/10:	Train: ABL 0.351Time: 882.1 s#### New Model Saved #####
-Ep. 6/10:	Train: ABL 0.351Time: 878.4 s#### New Model Saved #####
-Ep. 7/10:	Train: ABL 0.351Time: 880.6 s
-Ep. 8/10:	Train: ABL 0.351Time: 881.2 s#### New Model Saved #####
-Ep. 9/10:	Train: ABL 0.351Time: 880.3 s#### New Model Saved #####
-Ep. 10/10:	Train: ABL 0.351Time: 878.8 s#### Ended Training ####
+Ep. 1/1000:	
