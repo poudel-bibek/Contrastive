@@ -1,0 +1,20 @@
+
+#### Started Training ####
+Ep. 1/1000:	Train: ABL 4.866, Acc. 86.96%	Val: ABL 2.465, Acc. 83.91%, MAE 0.581, MSE 2.465
+Time: 187.3 s#### New Model Saved #####
+Ep. 2/1000:	Train: ABL 1.197, Acc. 86.42%	Val: ABL 1.132, Acc. 88.03%, MAE 0.439, MSE 1.132
+Time: 192.1 s#### New Model Saved #####
+Ep. 3/1000:	Train: ABL 0.524, Acc. 87.94%	Val: ABL 0.809, Acc. 89.58%, MAE 0.357, MSE 0.809
+Time: 190.4 s#### New Model Saved #####
+Ep. 4/1000:	Train: ABL 0.348, Acc. 88.98%	Val: ABL 0.755, Acc. 88.55%, MAE 0.319, MSE 0.755
+Time: 187.4 s#### New Model Saved #####
+Ep. 5/1000:	Train: ABL 0.268, Acc. 89.94%	Val: ABL 0.659, Acc. 90.23%, MAE 0.296, MSE 0.659
+Time: 187.5 s#### New Model Saved #####
+Ep. 6/1000:	Train: ABL 0.367, Acc. 90.45%	Val: ABL 1.103, Acc. 86.82%, MAE 0.354, MSE 1.103
+Time: 187.2 sEp. 7/1000:	Train: ABL 0.243, Acc. 90.79%	Val: ABL 0.61, Acc. 91.45%, MAE 0.265, MSE 0.61
+Time: 187.3 s#### New Model Saved #####
+Ep. 8/1000:	Train: ABL 0.158, Acc. 91.86%	Val: ABL 0.542, Acc. 92.03%, MAE 0.244, MSE 0.542
+Time: 187.2 s#### New Model Saved #####
+Ep. 9/1000:	Train: ABL 0.125, Acc. 92.44%	Val: ABL 0.555, Acc. 92.2%, MAE 0.233, MSE 0.555
+Time: 187.1 sEp. 10/1000:	Train: ABL 0.125, Acc. 92.75%	Val: ABL 0.591, Acc. 92.25%, MAE 0.233, MSE 0.591
+Time: 187.5 sEp. 11/1000:	
