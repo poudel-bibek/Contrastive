@@ -15,6 +15,7 @@ import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from generate_augs import generate_augmentations_random
 from pretrained_resnet import Pre_trained_resnet
+from model import PreModel, Identity, LinearLayer, ProjectionHead 
 
 from regressor_utils  import DriveDataset, prepare_data_names, DriveDatasetNames
 from regressor_utils  import prepare_data
@@ -37,8 +38,8 @@ class Regressor:
         print("Device Assigned to: ", self.device)
 
         # Constants + Hyperparams : Not set by terminal args
-        self.TRAIN_BATCH_SIZE = 32
-        self.VAL_BATCH_SIZE = 32
+        self.TRAIN_BATCH_SIZE = 24
+        self.VAL_BATCH_SIZE = 24
 
 
 
@@ -305,12 +306,12 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_data_dir", default = "./Contrastive_training/data", help = "Data Directory")
+    parser.add_argument("--train_data_dir", default = "../../Data/Steering_Angle/", help = "Data Directory")
     parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
 
-    parser.add_argument("--train_epochs", type = int, default = 1000, help = "Number of epochs to do training")
+    parser.add_argument("--train_epochs", type = int, default = 500, help = "Number of epochs to do training")
     parser.add_argument("--lr", type=float, default = 1e-4, help = "Learning Rate")
 
-    parser.add_argument("--val_dataset_src", default="../Data/Steering_Angle/val.npz", help="The source for creating dataset for validating predictor")
+    #parser.add_argument("--val_dataset_src", default="../Data/Steering_Angle/val.npz", help="The source for creating dataset for validating predictor")
     
     main(parser.parse_args())

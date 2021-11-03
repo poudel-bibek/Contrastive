@@ -4,7 +4,7 @@
 from pl_bolts.models.self_supervised import SimCLR
 import torch
 import torch.nn as nn
-
+from model import PreModel, Identity, LinearLayer, ProjectionHead 
 
 class Pre_trained_resnet(nn.Module):
     def __init__(self, freeze = 0):
@@ -18,8 +18,11 @@ class Pre_trained_resnet(nn.Module):
         """
         super().__init__()
         self.freeze = freeze
-        weight_path = 'https://pl-bolts-weights.s3.us-east-2.amazonaws.com/simclr/bolts_simclr_imagenet/simclr_imagenet.ckpt'
-        backbone = SimCLR.load_from_checkpoint(weight_path, strict=False)  # Last layer (fc): Linear(in_features=2048, out_features=1000, bias=True)
+        #weight_path = 'https://pl-bolts-weights.s3.us-east-2.amazonaws.com/simclr/bolts_simclr_imagenet/simclr_imagenet.ckpt'
+        #backbone = SimCLR.load_from_checkpoint(weight_path, strict=False)  # Last layer (fc): Linear(in_features=2048, out_features=1000, bias=True)
+
+        backbone = torch.load('/home/b/Desktop/Contrastive/Contrastive_training/Approach_3/Pretrained_models/approach_3_trained_model_ep_0.pt')
+        #print(backbone)
 
         layers = list(backbone.children())[:-1]
         self.encoder = nn.Sequential(*layers) #list(backbone.children())[:-1] # Get rid of the PH present in the PT bolts version, also we have 2 distinct encoder and PH
