@@ -53,27 +53,23 @@ def add_noise(image, sigma):
     noisy = np.float32(noisy)
     return noisy
 
-def generate_noise_image(image_path, noise_level=20):
+def generate_noise_image(image, noise_level=20):
 
-    image = cv2.imread(image_path)
     image = add_noise(image, noise_level)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = np.moveaxis(image, -1, 0)
 
     return image
 
-def generate_blur_image(image_path, blur_level=7):
+def generate_blur_image(image, blur_level=7):
     
-    image = cv2.imread(image_path)
     image = cv2.GaussianBlur(image, (blur_level, blur_level), 0)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = np.moveaxis(image, -1, 0)
 
     return image
 
-def generate_distort_image(image_path, distort_level=1):
-
-    image = cv2.imread(image_path)
+def generate_distort_image(image, distort_level=1):
      
     K = np.eye(3)*1000
     K[0,2] = image.shape[1]/2
@@ -87,9 +83,7 @@ def generate_distort_image(image_path, distort_level=1):
 
     return image
 
-def generate_RGB_image(image_path, channel, direction, dist_ratio=0.25):
-
-    image = cv2.imread(image_path)
+def generate_RGB_image(image, channel, direction, dist_ratio=0.25):
 
     color_str_dic = {
         0: "B",
@@ -109,9 +103,8 @@ def generate_RGB_image(image_path, channel, direction, dist_ratio=0.25):
 
     return image
 
-def generate_HSV_image(image_path, channel, direction, dist_ratio=0.25):
+def generate_HSV_image(image, channel, direction, dist_ratio=0.25):
     
-    image = cv2.imread(image_path)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     color_str_dic = {
@@ -158,142 +151,67 @@ def get_combined_parameters():
 
 
 
-
 def generate_augmentations_random(image_path):
     aug_imgs = []
-
-    aug_class = ["R", "G", "B", "H", "S", "V", "blur", "distort", "noise"]
-
-    selection = np.random.uniform(0, 9, size=5)
-    for i in range(len(selection)):
-        selection[i] = int(selection[i])
-
-    dark_light = {
-        0: [0, 4],
-        1: [0, 5],
-        2: [1, 4],
-        3: [1, 5],
-        4: [2, 4],
-        5: [2, 5]
-    }
-
-    blur_levels = {
-        0: 7,
-        1: 17,
-        2: 37,
-        3: 67,
-        4: 107
-    }
-
-    noise_levels = {
-        0: 20,
-        1: 50,
-        2: 100,
-        3: 150,
-        4: 200
-    }
-    
-    distort_levels = {
-        0: 1,
-        1: 10,
-        2: 50,
-        3: 200,
-        4: 500
-    }
-
-    for i in range(len(selection)):
-        if aug_class[int(selection[i])] == "R":
-            coin = random.random()
-            if coin < 0.5:
-                # R darker
-                values = dark_light[4]
-                aug_imgs.append(generate_RGB_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-            else:
-                # R lighter
-                values = dark_light[5]
-                aug_imgs.append(generate_RGB_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-
-        elif aug_class[int(selection[i])] == "G":
-            coin = random.random()
-            if coin < 0.5:
-                # darker
-                values = dark_light[2]
-                aug_imgs.append(generate_RGB_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-
-            else:
-                # lighter
-                values = dark_light[3]
-                aug_imgs.append(generate_RGB_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-
-        elif aug_class[int(selection[i])] == "B":
-            coin = random.random()
-            if coin < 0.5:
-                # darker
-                values = dark_light[0]
-                aug_imgs.append(generate_RGB_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-
-            else:
-                # lighter
-                values = dark_light[1]
-                aug_imgs.append(generate_RGB_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-
-        elif aug_class[int(selection[i])] == "H":
-            coin = random.random()
-            if coin < 0.5:
-                # darker
-                values = dark_light[0]
-                aug_imgs.append(generate_HSV_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-            else:
-                # lighter
-                values = dark_light[1]
-                aug_imgs.append(generate_HSV_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-        elif aug_class[int(selection[i])] == "S":
-            coin = random.random()
-            if coin < 0.5:
-                # darker
-                values = dark_light[2]
-                aug_imgs.append(generate_HSV_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-            else:
-                # lighter
-                values = dark_light[3]
-                aug_imgs.append(generate_HSV_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-        elif aug_class[int(selection[i])] == "V":
-            coin = random.random()
-            if coin < 0.5:
-                # darker
-                values = dark_light[4]
-                aug_imgs.append(generate_HSV_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-            else:
-                # lighter
-                values = dark_light[5]
-                aug_imgs.append(generate_HSV_image(image_path, values[0], values[1], dist_ratio=np.random.uniform()))
-
-        elif aug_class[int(selection[i])] == "blur":
-            blur_random = int(((107 - 7) * np.random.uniform()) + 7)
-            if blur_random % 2 == 0:
-                blur_random += 1
-
-            aug_imgs.append(generate_blur_image(image_path, blur_random))
-
-        elif aug_class[int(selection[i])] == "distort":
-            distort_random = int(((500 - 1) * np.random.uniform()) + 1)
-
-            aug_imgs.append(generate_distort_image(image_path, distort_random))
-            
-        elif aug_class[int(selection[i])] == "noise":
-            noise_random = int(((200 - 20) * np.random.uniform()) + 20)
-
-            aug_imgs.append(generate_noise_image(image_path, noise_random))
-            
-
-    
-    
     clean_img = cv2.imread(image_path)
+    
+    selection = np.random.uniform(0, 9, size=5)
+
+    # aug_class = ["R", "G", "B", "H", "S", "V", "blur", "distort", "noise"]
+
+
+    # dark_light = {
+    #     0: [0, 4],
+    #     1: [0, 5],
+    #     2: [1, 4],
+    #     3: [1, 5],
+    #     4: [2, 4],
+    #     5: [2, 5]
+    # }
+
+    # blur_levels = {
+    #     0: 7,
+    #     1: 17,
+    #     2: 37,
+    #     3: 67,
+    #     4: 107
+    # }
+
+    # noise_levels = {
+    #     0: 20,
+    #     1: 50,
+    #     2: 100,
+    #     3: 150,
+    #     4: 200
+    # }
+    
+    # distort_levels = {
+    #     0: 1,
+    #     1: 10,
+    #     2: 50,
+    #     3: 200,
+    #     4: 500
+    # }
+
+    methods = [generate_RGB_image(clean_img.copy(), 2, 4 if random.random() < 0.5 else 5 , np.random.uniform()),
+                generate_RGB_image(clean_img.copy(), 1, 4 if random.random() < 0.5 else 5 , np.random.uniform()),
+                generate_RGB_image(clean_img.copy(), 0, 4 if random.random() < 0.5 else 5 , np.random.uniform()),
+                generate_HSV_image(clean_img.copy(), 2, 4 if random.random() < 0.5 else 5 , np.random.uniform()),
+                generate_HSV_image(clean_img.copy(), 1, 4 if random.random() < 0.5 else 5 , np.random.uniform()),
+                generate_HSV_image(clean_img.copy(), 0, 4 if random.random() < 0.5 else 5 , np.random.uniform()),
+                generate_blur_image(clean_img.copy(), random.randrange(7, 107, 2)),
+                generate_distort_image(clean_img.copy(), random.randint(1,500)),
+                generate_noise_image(clean_img.copy(), random.randint(20,200))]
+
+    for i in selection:
+        aug_imgs.append(methods[i])   
+
+
     clean_img = cv2.cvtColor(clean_img, cv2.COLOR_BGR2RGB)
-    clean_img = np.moveaxis(clean_img, -1, 0)
+    clean_img = np.moveaxis(image_path, -1, 0)
     aug_imgs.append(clean_img)
 
     random.shuffle(aug_imgs)
     aug_imgs = np.array(aug_imgs)
-    
+
     return aug_imgs
