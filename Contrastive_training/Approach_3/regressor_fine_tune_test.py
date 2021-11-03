@@ -224,25 +224,19 @@ class Regressor:
                 ground_truths_val.extend(angle_batch.numpy())
 
                 name_batch = np.array(name_batch)
-                angle_batch = np.array(angle_batch)
+                targets_batch = np.array(angle_batch)
 
-                targets_batch = []
+                inputs_batch = []
 
-                inputs_batch = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[0]}")
+                for i in range(name_batch):
+                    img = cv2.imread(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[0]}")
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    img = np.moveaxis(img, -1, 0)
 
-                for m in range(len(inputs_batch)):
-                    targets_batch.append(angle_batch[0])
-                
-                for n in range(1, len(name_batch)):
-                    aug_imgs = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[n]}")
+                    inputs_batch.append(img)
 
-                    for j in range(len(aug_imgs)):
-                        targets_batch.append(angle_batch[n])
-                    
-                    inputs_batch = np.concatenate((inputs_batch, aug_imgs), axis=0)
-                
-                targets_batch = np.array(targets_batch)
-
+                inputs_batch = np.array(inputs_batch)
+            
                 inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
                 targets_batch = torch.tensor(targets_batch, dtype=torch.float32)
 
