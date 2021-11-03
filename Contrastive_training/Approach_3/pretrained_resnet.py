@@ -54,10 +54,10 @@ class Pre_trained_resnet(nn.Module):
         if self.freeze ==0:
             self.encoder.eval() # Dont need no training
             with torch.no_grad():
-                representations = self.encoder(x)[0] # Just get the 0th item, this is a list
+                representations = self.encoder(x)# Just get the 0th item, this is a list
 
         else: # its not perfect (in case 1, still has to calculate half of the gradients)
-            representations = self.encoder(x)[0]
+            representations = self.encoder(x)
         #print("A", representations[0])
         #print("Rep",representations.shape) # Batch_size x 2048
         x = self.fc1(representations)

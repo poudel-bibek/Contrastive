@@ -181,7 +181,12 @@ class Regressor:
                 best_loss = avg_batch_loss_val
                 print("#### New Model Saved #####")
                 logfile.write("#### New Model Saved #####\n")
-                torch.save(self.net, './Saved_models/regressor.pt')
+                torch.save(self.net, f'./Saved_models/regressor_{i}.pt')
+
+            if i%10==0:
+                print("#### New Model Saved #####")
+                logfile.write("#### New Model Saved #####\n")
+                torch.save(self.net, f'./Saved_models/regressor_{i}.pt')
 
             train_loss_collector[i] = avg_batch_loss_train
 
