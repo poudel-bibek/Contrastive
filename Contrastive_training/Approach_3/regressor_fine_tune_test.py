@@ -124,6 +124,7 @@ class Regressor:
                 ground_truths_train.extend(targets_batch.numpy())
 
                 inputs_batch = self.augment(inputs_batch) # Augmenting each of the images
+                inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
 
                 inputs_batch = inputs_batch.to(self.device)
                 targets_batch = targets_batch.to(self.device)

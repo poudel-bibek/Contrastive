@@ -35,6 +35,8 @@ class DriveDatasetNames(Dataset):
         img_path = f"{self.path}/trainHonda100k/{self.images_list[key]}"
         # img_path = os.path.join(self.path, "/trainHonda100k/", str(self.images_list[key]))
         image_idx = Image.open(img_path).convert("RGB")
+        image_idx = np.array(image_idx)
+        image_idx = np.moveaxis(image_idx, -1, 0)
         target_idx = self.target_list[key]
         # Correct datatype here
         return [image_idx.astype(np.float32), target_idx.astype(np.float32)]
