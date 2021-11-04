@@ -1,7 +1,7 @@
 """Fine tune the pretrained ResNet50 from PT Lightning for steering"""
 
 
-from os import name
+import os
 import time
 import random
 import cv2
@@ -12,13 +12,13 @@ from numpy.lib.function_base import angle
 import torch
 import torch.optim as optim
 import torch.nn as nn
+import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
-from generate_augs import generate_augmentations_random
+from generate_augs import GaussianNoise, ColorJitterPerChannel
 from pretrained_resnet import Pre_trained_resnet
 from model import PreModel, Identity, LinearLayer, ProjectionHead 
 
 from regressor_utils  import DriveDataset, prepare_data_names, DriveDatasetNames
-from regressor_utils  import prepare_data
 
 class Regressor:
     def __init__(self, args):
@@ -41,12 +41,11 @@ class Regressor:
         self.TRAIN_BATCH_SIZE = 24
         self.VAL_BATCH_SIZE = 24
 
-
-
         print("Data Directory: ", self.args.train_data_dir)
         prepare_data_names(self.args.train_data_dir)
 
         train_images, train_targets, val_images, val_targets = prepare_data_names(self.args.train_data_dir)
+        
         print("\nLoaded:\nTraining: {} Images, {} Targets\nValidation: {} Images, {} Targets".format(train_images.shape[0],
                                                                                                     train_targets.shape[0],
                                                                                                     val_images.shape[0],
@@ -67,6 +66,13 @@ class Regressor:
 
         self.criterion = nn.MSELoss() # reduction = "mean"
         self.optimizer = optim.Adam(filter(lambda p: p.requires_grad, self.net.parameters()), lr = self.args.lr) 
+
+        self.augment = transforms.Compose([
+                            transforms.RandomPerspective(distortion_scale=np.random.uniform()),
+                            transforms.GaussianBlur(kernel_size=random.randrange(7, 107, 2)),
+                            GaussianNoise(std=random.randint(20,200)),
+                            ColorJitterPerChannel()
+                        ])
 
     def train(self):
 
@@ -114,32 +120,10 @@ class Regressor:
             predictions_train =[]
 
             for bi, data in enumerate(self.train_dataloader):
+                inputs_batch, targets_batch = data 
+                ground_truths_train.extend(targets_batch.numpy())
 
-                name_batch, angle_batch = data 
-                ground_truths_train.extend(angle_batch.numpy())
-
-                name_batch = np.array(name_batch)
-                angle_batch = np.array(angle_batch)
-
-                targets_batch = []
-
-                inputs_batch = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[0]}")
-
-                for m in range(len(inputs_batch)):
-                    targets_batch.append(angle_batch[0])
-                
-                for n in range(1, len(name_batch)):
-                    aug_imgs = generate_augmentations_random(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[n]}")
-
-                    for j in range(len(aug_imgs)):
-                        targets_batch.append(angle_batch[n])
-                    
-                    inputs_batch = np.concatenate((inputs_batch, aug_imgs), axis=0)
-                
-                targets_batch = np.array(targets_batch)
-
-                inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
-                targets_batch = torch.tensor(targets_batch, dtype=torch.float32)
+                inputs_batch = self.augment(inputs_batch) # Augmenting each of the images
 
                 inputs_batch = inputs_batch.to(self.device)
                 targets_batch = targets_batch.to(self.device)
@@ -220,25 +204,8 @@ class Regressor:
 
         with torch.no_grad():
             for bi, data in enumerate(self.val_dataloader):
-                name_batch, angle_batch = data 
-                ground_truths_val.extend(angle_batch.numpy())
-
-                name_batch = np.array(name_batch)
-                targets_batch = np.array(angle_batch)
-
-                inputs_batch = []
-
-                for i in range(name_batch):
-                    img = cv2.imread(f"{self.args.train_data_dir}/trainHonda100k/{name_batch[0]}")
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                    img = np.moveaxis(img, -1, 0)
-
-                    inputs_batch.append(img)
-
-                inputs_batch = np.array(inputs_batch)
-            
-                inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
-                targets_batch = torch.tensor(targets_batch, dtype=torch.float32)
+                inputs_batch, targets_batch = data 
+                ground_truths_val.extend(targets_batch.numpy())
 
                 inputs_batch = inputs_batch.to(self.device)
                 targets_batch = targets_batch.to(self.device)
@@ -305,7 +272,8 @@ def main(args):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_data_dir", default = "../../Data/Steering_Angle/", help = "Data Directory")
+    # parser.add_argument("--train_data_dir", default = "../../Data/Steering_Angle/", help = "Data Directory")
+    parser.add_argument("--train_data_dir", default = "./data/", help = "Data Directory")
     parser.add_argument("--seed", type = int, default = 99, help = "Randomization Seed")
 
     parser.add_argument("--train_epochs", type = int, default = 500, help = "Number of epochs to do training")

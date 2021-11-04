@@ -1,8 +1,11 @@
 
+import cv2
 import numpy as np
 import torch.nn as nn
 from torch.utils.data import Dataset
 import csv
+from PIL import Image
+import os
 
 class DriveDataset(Dataset):
     def __init__(self, images, targets):
@@ -18,17 +21,23 @@ class DriveDataset(Dataset):
         return [image_idx.astype(np.float32), target_idx.astype(np.float32)]
 
 class DriveDatasetNames(Dataset):
-    def __init__(self, images, targets):
+    def __init__(self, images, targets, path):
         self.images_list = images
         self.target_list = targets
+        self.path = path
         assert (len(self.images_list) == len(self.target_list))
+
+        # Create a list of transforms here
+
     def __len__(self):
         return len(self.images_list)
     def __getitem__(self, key):
-        image_idx = self.images_list[key]
+        img_path = f"{self.path}/trainHonda100k/{self.images_list[key]}"
+        # img_path = os.path.join(self.path, "/trainHonda100k/", str(self.images_list[key]))
+        image_idx = Image.open(img_path).convert("RGB")
         target_idx = self.target_list[key]
         # Correct datatype here
-        return [image_idx, target_idx.astype(np.float32)]
+        return [image_idx.astype(np.float32), target_idx.astype(np.float32)]
     
 def prepare_data(directory):
     """

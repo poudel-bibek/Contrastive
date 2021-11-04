@@ -3,6 +3,7 @@ import os
 import pickle
 import numpy as np
 from PIL import Image
+import PIL
 
 import torch
 from torch.utils.data import Dataset, DataLoader

@@ -50,6 +50,7 @@ class Pre_trained_resnet(nn.Module):
         #self.non_linear = nn.ReLU()
 
     def forward(self, x):
+        x = torch.moveaxis(x, -1, 1)
         #print(x.shape) [ Batch, channels, height, length]
         if self.freeze ==0:
             self.encoder.eval() # Dont need no training
