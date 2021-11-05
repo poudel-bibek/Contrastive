@@ -130,7 +130,7 @@ class Regressor:
                 inputs_batch, targets_batch = data 
                 ground_truths_train.extend(targets_batch.numpy())
 
-                selection = np.random.randint(0, 5, size=2) # This can be adjusted for more augmentations
+                selection = np.random.randint(0, 4, size=2) # This can be adjusted for more augmentations
                 
                 for i in selection:
                     inputs_batch = self.augmentations[int(i)](inputs_batch)
