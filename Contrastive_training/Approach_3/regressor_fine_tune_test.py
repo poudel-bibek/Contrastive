@@ -53,8 +53,8 @@ class Regressor:
 
         # print("Each image has shape:{}".format(train_images.shape[-3:]))  
 
-        self.train_dataset = DriveDatasetNames(train_images, train_targets)
-        self.val_dataset = DriveDatasetNames(val_images, val_targets)
+        self.train_dataset = DriveDatasetNames(train_images, train_targets, self.args.train_data_dir)
+        self.val_dataset = DriveDatasetNames(val_images, val_targets, self.args.train_data_dir)
 
 
         self.net = Pre_trained_resnet(freeze=2).to(self.device) #  Ignore the warning for now
@@ -73,6 +73,13 @@ class Regressor:
                             GaussianNoise(std=random.randint(20,200)),
                             ColorJitterPerChannel()
                         ])
+        
+        self.augmentations = [
+            transforms.RandomPerspective(distortion_scale=np.random.uniform()),
+            transforms.GaussianBlur(kernel_size=random.randrange(7, 107, 2)),
+            GaussianNoise(std=random.randint(20,200)),
+            ColorJitterPerChannel()
+        ]
 
     def train(self):
 
@@ -123,7 +130,12 @@ class Regressor:
                 inputs_batch, targets_batch = data 
                 ground_truths_train.extend(targets_batch.numpy())
 
-                inputs_batch = self.augment(inputs_batch) # Augmenting each of the images
+                selection = np.random.randint(0, 5, size=2) # This can be adjusted for more augmentations
+                
+                for i in selection:
+                    inputs_batch = self.augmentations[int(i)](inputs_batch)
+
+                # inputs_batch = self.augment(inputs_batch) # Augmenting each of the images
                 inputs_batch = torch.tensor(inputs_batch, dtype=torch.float32)
 
                 inputs_batch = inputs_batch.to(self.device)
